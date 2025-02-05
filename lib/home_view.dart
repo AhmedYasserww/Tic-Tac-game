@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tic_tac_game/logic/game_logic.dart';
+import 'package:tic_tac_game/widgets/game_board.dart';
+import 'package:tic_tac_game/widgets/game_controls.dart';
+import 'package:tic_tac_game/widgets/player_info.dart';
 
-import 'logic/game_logic.dart';
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
 
@@ -13,68 +16,76 @@ class _HomeViewState extends State<HomeView> {
   bool gameOver = false;
   bool isSwitched = false;
   int turn = 0;
-  String result ='X is Win';
+  String result = '';
   Game game = Game();
+
+  void resetGame() {
+    setState(() {
+      Player.playerO.clear();
+      Player.playerX.clear();
+      activePlayer = 'X';
+      gameOver = false;
+      isSwitched = false;
+      turn = 0;
+      result = '';
+    });
+  }
+
+  void onTapped(int index) async {
+    if ((Player.playerX.isEmpty || !Player.playerX.contains(index)) &&
+        (Player.playerO.isEmpty || !Player.playerO.contains(index))) {
+      game.playGame(index, activePlayer);
+      updateState();
+      if (!isSwitched && !gameOver && turn != 9) {
+        await game.autoPlay(activePlayer);
+        updateState();
+      }
+    }
+  }
+
+  void updateState() {
+    setState(() {
+      activePlayer = (activePlayer == 'X') ? 'O' : 'X';
+      turn++;
+      String winnerPlayer = game.checkWinner();
+      if (winnerPlayer != '') {
+        gameOver = true;
+        result = "$winnerPlayer is The Winner";
+      } else if (!gameOver && turn == 9) {
+        result = "It's a Draw";
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff00061a),
-body: SafeArea(
-  child: Column(
-    children: [
- SwitchListTile.adaptive(
-   title: const Text("Turn on/off two player mode",style: TextStyle(color: Colors.white,
-     fontSize: 20,),
-     textAlign: TextAlign.center,),
-     value:isSwitched,
-     onChanged: (value){
-  setState(() {
-    isSwitched = value;
-  });
- }),
-      Text(
-        'Player  $activePlayer  turn',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 40,
+      body: SafeArea(
+        child: Column(
+          children: [
+            ...firstBlock(),
+            const SizedBox(height: 30,),
+            GameBoard(onTapped: onTapped),
+            ...lastBlock(),
+          ],
         ),
       ),
-      Expanded(
-          child: GridView.count(
-           // childAspectRatio: 1,
-              crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          padding: const EdgeInsets.all(20),
-                  crossAxisCount: 3,
-                  children: List.generate(9, (index) {
-          return InkWell(
-            // onTap:() =>  gameOver ? null : () => onTapped(index),
-              onTap:() =>onTapped(index),
+    );
+  }
 
+  List <Widget> firstBlock() {
+    return [
+      GameControls(
+        isSwitched: isSwitched,
+        onSwitchChanged: (value) => setState(() => isSwitched = value),
+      ),
+      PlayerInfo(activePlayer: activePlayer),
+    ];
+  }
 
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xff001456),
-               borderRadius: BorderRadius.circular(20),
-               // border: Border.all(color: Colors.grey),
-              ),
-              child: Center(
-                child: Text(
-                  Player.playerX.contains(index) ? "X" :
-                  Player.playerO.contains(index) ? "0" :
-                  " ",
-                 // game.board[index],
-                  style:
-                   TextStyle(
-                      color:  Player.playerX.contains(index) ? Colors.blue :
-                      Colors.pink, fontSize: 52
-                  ),
-                ),
-              ),
-            ),
-          );
-                  }),
-                )),
+  List <Widget> lastBlock() {
+    return [
       Text(
         result,
         style: const TextStyle(
@@ -83,48 +94,20 @@ body: SafeArea(
         ),
         textAlign: TextAlign.center,
       ),
-      MaterialButton(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20)),),
-        color: const Color(0xff4169e8),
-        onPressed: (){
-          setState(() {
-            Player.playerO.clear();
-            Player.playerX.clear();
-             activePlayer = 'X';
-             gameOver = false;
-            isSwitched = false;
-            turn = 0;
-            result ='';
-          });
-        },
-        child:const Text("Repeat the game",
-          style: TextStyle(color: Colors.white,fontSize: 20),textAlign: TextAlign.center,),
-      )
-    ],
-  ),
-),
-    );
+      ElevatedButton(
+        onPressed: resetGame,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xff4169e8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        child: const Text(
+          "Repeat the game",
+          style: TextStyle(color: Colors.white, fontSize: 20),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    ];
   }
-
-  onTapped(int index) async{
-
-    if((Player.playerX.isEmpty || !Player.playerX.contains(index)) &&
-        (Player.playerO.isEmpty || !Player.playerO.contains(index))){
-      game.playGame(index, activePlayer);
-      updateState();
-      if(!isSwitched && !gameOver){
-        await game.autoPlay(activePlayer);
-        updateState();
-      }
-
-    }
-
-  }
-
-  void updateState() {
-     setState(() {
-      activePlayer = (activePlayer == 'X') ? 'O' : 'X';
-    });
-  }
-  //game.playGame(index) {}
 }
