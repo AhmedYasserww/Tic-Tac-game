@@ -32,6 +32,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void onTapped(int index) async {
+   if (gameOver) return;
     if ((Player.playerX.isEmpty || !Player.playerX.contains(index)) &&
         (Player.playerO.isEmpty || !Player.playerO.contains(index))) {
       game.playGame(index, activePlayer);
@@ -62,12 +63,25 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       backgroundColor: const Color(0xff00061a),
       body: SafeArea(
-        child: Column(
+        child:MediaQuery.of(context).orientation == Orientation.portrait ? Column(
           children: [
             ...firstBlock(),
             const SizedBox(height: 30,),
             GameBoard(onTapped: onTapped),
             ...lastBlock(),
+          ],
+        ) : Row(
+          children: [
+           Expanded(
+             child: Column(
+               children: [
+                 ...firstBlock(),
+                 const SizedBox(height: 30,),
+                 ...lastBlock(),
+               ],
+             ),
+           ),
+            GameBoard(onTapped: onTapped)
           ],
         ),
       ),
